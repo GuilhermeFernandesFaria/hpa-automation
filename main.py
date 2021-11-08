@@ -23,8 +23,7 @@ def getRequestLimit():
                         print(f'Request_CPU: {resources_requests["cpu"]} \n'
                               f'Request_MEM: {resources_requests["memory"]} \n'
                               f'Limits_CPU: {resources_limits["cpu"]} \n'
-                              f'limits_MEM: {resources_limits["memory"]}'
-                              f'\n')
+                              f'limits_MEM: {resources_limits["memory"]}\n')
             elif 'cpu' not in resources_requests.keys() or 'cpu' not in resources_limits.keys() or 'memory' not in resources_requests.keys() or 'memory' not in resources_limits.keys():
                 print(f'DEPLOYMENT NAO SETADO REQUEST OU LIMIT (CPU/MEMORY):')
                 print(f'Nome do deployment: {i.metadata.name}\n')
