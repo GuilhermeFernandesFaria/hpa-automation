@@ -1,4 +1,3 @@
 kubernetes
-kubernetes.client
 azure.cli.core
 subprocess
