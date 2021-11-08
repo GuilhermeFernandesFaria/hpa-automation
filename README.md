@@ -6,4 +6,5 @@ pip3
 python3.10
 
 install the necessary plugins with the following command:
-pip install -r requirements.txt
+
+$ pip install -r requirements.txt
