@@ -19,11 +19,12 @@ def getRequestLimit():
                     "memory"] is not None:
                     if resources_requests["cpu"] == resources_limits["cpu"] or resources_limits["memory"] == \
                             resources_requests["memory"]:
-                        print(f'DEPLOYMENT COM REQUEST E LIMIT IGUAIS: (CPU/MEMORY): \nDeployment: {i.metadata.name.upper()}')
-                        print(f'Request_CPU: {resources_requests["cpu"]} \n'
-                              f'Request_MEM: {resources_requests["memory"]} \n'
-                              f'Limits_CPU: {resources_limits["cpu"]} \n'
-                              f'limits_MEM: {resources_limits["memory"]}\n')
+                        if i.metadata.namespace != "kube-system":    
+                            print(f'DEPLOYMENT COM REQUEST E LIMIT IGUAIS: (CPU/MEMORY): \nNamespace: {i.metadata.namespace.upper()} \nDeployment: {i.metadata.name.upper()}')
+                            print(f'Request_CPU: {resources_requests["cpu"]} \n'
+                                f'Request_MEM: {resources_requests["memory"]} \n'
+                                f'Limits_CPU: {resources_limits["cpu"]} \n'
+                                f'limits_MEM: {resources_limits["memory"]}\n')
             elif 'cpu' not in resources_requests.keys() or 'cpu' not in resources_limits.keys() or 'memory' not in resources_requests.keys() or 'memory' not in resources_limits.keys():
                 print(f'DEPLOYMENT NAO SETADO REQUEST OU LIMIT (CPU/MEMORY):')
                 print(f'Nome do deployment: {i.metadata.name}\n')
@@ -50,7 +51,7 @@ def main():
         print("Cannot find any context in kube-config file.")
         return
     context = [context['name'] for context in contexts[0]]
-    # context = ["akspriv-linkapi-prd-admin"]
+    # context = ["akspriv-mktplace-prd-admin","akspriv-ferrpromo-prd-admin","akspriv-mktponboarding-prd-admin","akspriv-intmktpbanqi-prd-admin"]
     index = 0
     for i in context:
         if isPrd(i):
