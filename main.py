@@ -2,6 +2,7 @@ from kubernetes import client, config
 import kubernetes.client
 from azure.cli.core import get_default_cli
 import subprocess
+import json
 
 configuration = kubernetes.client.Configuration()
 subscription = {"PRD - Online": "90e3f5d9-3731-4c45-a3f1-419fbc97f996", "PRD - Online 2": "9f66adb7-6721-4ca4-953e-e2b4b864803c", "PRD - Inteligencia Operacional": "5a228de8-f1ab-4c19-9d20-6ed918f6e81f",
@@ -42,12 +43,20 @@ def getHpa():
             print(
                 f'Name: {i.metadata.name} - Minimo: {i.spec.min_replicas} - Maximo: {i.spec.max_replicas} - Atual: {i.status.current_replicas}')
 
+def getNodePools(aks, rg):
+    nplist = subprocess.Popen(['az', 'aks', 'nodepool', 'list', '--cluster-name', aks, '--resource-group', rg])
+    return nplist
 
 def getAutoScaleSet():
-    for sub_name, sub_id in subscription.items:
-        get_default_cli().invoke(['account', 'set', '--subscription', sub_id])
-        rglist = subprocess.Popen(
-            ['az', 'aks', 'list'], stdout=subprocess.PIPE)
+    for sub_name, subid in subscription.items():
+        get_default_cli().invoke(['account', 'set', '--subscription', subid])
+        akslist = subprocess.Popen(['az', 'aks', 'list'], stdout=subprocess.PIPE)
+        out, err = akslist.communicate()
+        aks_list_json = json.loads(out)
+        for cluster in aks_list_json:
+            nodepools = getNodePools(cluster["name"], cluster["resourceGroup"])
+            nodepoolJson = json.dumps(nodepools)
+            print(nodepoolJson)
 
 
 def isPrd(context):
@@ -69,11 +78,12 @@ def main():
         if isPrd(i):
             active_context = context[index]
             print()
-            print(f'CLUSTER --> {active_context.upper()}')
+            # print(f'CLUSTER --> {active_context.upper()}')
             index += 1
             config.load_kube_config(context=active_context)
             # getRequestLimit()
-            getHpa()
+            # getHpa()
+            getAutoScaleSet()
             print()
             print("------------------------------------------------------------------------------------------------")
 
