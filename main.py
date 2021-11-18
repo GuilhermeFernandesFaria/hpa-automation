@@ -5,9 +5,7 @@ import subprocess
 import json
 
 configuration = kubernetes.client.Configuration()
-subscription = {"PRD - Online": "90e3f5d9-3731-4c45-a3f1-419fbc97f996", "PRD - Online 2": "9f66adb7-6721-4ca4-953e-e2b4b864803c", "PRD - Inteligencia Operacional": "5a228de8-f1ab-4c19-9d20-6ed918f6e81f",
-                "PRD - DataScience": "e4128695-83c0-493e-89db-2095acf2d7c6", "PRD - Lojas": "7caa6be6-25dc-44ae-bf8f-cd2a01fea109", "PRD - Backoffice": "819a7d8f-1b0a-4121-b7dc-d001d9f109f1"}
-
+subscription = {"PRD - Online": "90e3f5d9-3731-4c45-a3f1-419fbc97f996", "PRD - Online 2": "9f66adb7-6721-4ca4-953e-e2b4b864803c", "PRD - Inteligencia Operacional": "5a228de8-f1ab-4c19-9d20-6ed918f6e81f", "PRD - DataScience": "e4128695-83c0-493e-89db-2095acf2d7c6", "PRD - Lojas": "7caa6be6-25dc-44ae-bf8f-cd2a01fea109", "PRD - Backoffice": "819a7d8f-1b0a-4121-b7dc-d001d9f109f1"}
 
 def getRequestLimit():
     apps_V1_Api = client.AppsV1Api().list_deployment_for_all_namespaces()
@@ -39,24 +37,37 @@ def getHpa():
     hpaList = autoscalingV1.list_horizontal_pod_autoscaler_for_all_namespaces(
         watch=False)
     for i in hpaList.items:
-        if i.spec.max_replicas <=1:
+        if i.spec.max_replicas <= 1:
             print(
                 f'Name: {i.metadata.name} - Minimo: {i.spec.min_replicas} - Maximo: {i.spec.max_replicas} - Atual: {i.status.current_replicas}')
 
+
 def getNodePools(aks, rg):
-    nplist = subprocess.Popen(['az', 'aks', 'nodepool', 'list', '--cluster-name', aks, '--resource-group', rg])
-    return nplist
+    nplist = subprocess.Popen(
+        ['az', 'aks', 'nodepool', 'list', '--cluster-name', aks, '--resource-group', rg], stdout=subprocess.PIPE)
+    out, err = nplist.communicate()
+    nplist_json = json.loads(out)
+    return nplist_json
+
 
 def getAutoScaleSet():
     for sub_name, subid in subscription.items():
         get_default_cli().invoke(['account', 'set', '--subscription', subid])
-        akslist = subprocess.Popen(['az', 'aks', 'list'], stdout=subprocess.PIPE)
+        print(f'SUBSCRIPTION: {sub_name} --> SUBID: {subid}')
+        akslist = subprocess.Popen(
+            ['az', 'aks', 'list'], stdout=subprocess.PIPE)
         out, err = akslist.communicate()
         aks_list_json = json.loads(out)
         for cluster in aks_list_json:
+            print(
+                f"CLUSTER --> {cluster['name']} - RESOURCE-GROUP --> {cluster['resourceGroup']}")
             nodepools = getNodePools(cluster["name"], cluster["resourceGroup"])
-            nodepoolJson = json.dumps(nodepools)
-            print(nodepoolJson)
+            for nodepool in nodepools:
+                print(
+                    f'Nodepool --> {nodepool["name"]} - MinNodes --> {nodepool["minCount"]} - MaxNodes --> {nodepool["maxCount"]} - AutoScale --> {nodepool["enableAutoScaling"]}')
+            print()
+        print()
+        print("------------------------------------------------------------------------------------------------")
 
 
 def isPrd(context):
@@ -72,21 +83,20 @@ def main():
         print("Cannot find any context in kube-config file.")
         return
     context = [context['name'] for context in contexts[0]]
-    # context = ["akspriv-chamanozap-prd-admin", "akspriv-entregamais-prd-admin", "akspriv-envias-prd-admin", "akspriv-logreversa-prd-admin", "akspriv-retira-prd-admin", "akspriv-mensageria-prd-admin"]
+    # context = ["","","",""]
     index = 0
     for i in context:
         if isPrd(i):
             active_context = context[index]
             print()
-            # print(f'CLUSTER --> {active_context.upper()}')
+            print(f'CLUSTER --> {active_context.upper()}')
             index += 1
             config.load_kube_config(context=active_context)
             # getRequestLimit()
             # getHpa()
-            getAutoScaleSet()
             print()
             print("------------------------------------------------------------------------------------------------")
 
 
 if __name__ == '__main__':
-    main()
+    getAutoScaleSet()
